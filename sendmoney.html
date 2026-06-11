@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet - Enviar Dinero</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; padding: 30px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-sm p-4">
+          <h2 class="mb-4 text-center">Enviar Dinero</h2>
+          
+          <div id="sendAlert"></div>
+          
+          <div class="mb-4">
+            <label for="searchContact" class="form-label">Buscar en la agenda de transferencias:</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="searchContact" placeholder="Nombre, alias o banco...">
+              <button class="btn btn-primary" type="button" id="btnBuscar">Buscar</button>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 mb-4">
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalContacto">
+              + Agregar nuevo contacto
+            </button>
+          </div>
+
+          <h4 class="mb-3">Contactos</h4>
+          <ul id="contactList" class="list-group mb-4">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong class="contact-name">John Doe</strong>
+                <small class="text-muted d-block">CBU: 123456789 | Alias: john.doe | Banco: ABC Bank</small>
+              </div>
+              <button class="btn btn-sm btn-primary btn-enviar" data-name="John Doe">Enviar</button>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong class="contact-name">Jane Smith</strong>
+                <small class="text-muted d-block">CBU: 987654321 | Alias: jane.smith | Banco: XYZ Bank</small>
+              </div>
+              <button class="btn btn-sm btn-primary btn-enviar" data-name="Jane Smith">Enviar</button>
+            </li>
+          </ul>
+
+          <a href="menu.html" class="btn btn-secondary w-100">Volver al Menú Principal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalContacto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Contacto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addContactForm">
+            <div class="mb-3">
+              <label class="form-label">Nombre y apellido</label>
+              <input type="text" class="form-control" id="newName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Número de CBU</label>
+              <input type="number" class="form-control" id="newCbu" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Alias</label>
+              <input type="text" class="form-control" id="newAlias" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nombre del Banco</label>
+              <input type="text" class="form-control" id="newBank" required>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-success">Guardar Contacto</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Manejo de envío de dinero (Simulado con monto fijo de ejemplo de $5000 para validar la lógica)
+    const montoAEnviar = 5000;
+
+    document.getElementById('contactList').addEventListener('click', function(e) {
+      if(e.target.classList.contains('btn-enviar')) {
+        const name = e.target.getAttribute('data-name');
+        let currentBalance = parseInt(localStorage.getItem('walletBalance') || '60000');
+
+        if(currentBalance >= montoAEnviar) {
+          currentBalance -= montoAEnviar;
+          localStorage.setItem('walletBalance', currentBalance.toString());
+
+          // Registrar movimiento
+          let transactions = JSON.parse(localStorage.getItem('walletTransactions') || '[]');
+          transactions.unshift({ description: `Transferencia a ${name}`, amount: `-$${montoAEnviar}` });
+          localStorage.setItem('walletTransactions', JSON.stringify(transactions));
+
+          document.getElementById('sendAlert').innerHTML = `<div class="alert alert-success">Transferencia de $${montoAEnviar} enviada con éxito a ${name}.</div>`;
+          window.scrollTo(0,0);
+          setTimeout(() => { window.location.href = "menu.html"; }, 2000);
+        } else {
+          document.getElementById('sendAlert').innerHTML = `<div class="alert alert-danger">Saldo insuficiente para completar la operación.</div>`;
+          window.scrollTo(0,0);
+        }
+      }
+    });
+
+    // Agregar nuevo contacto dinámicamente a la lista
+    document.getElementById('addContactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('newName').value;
+      const cbu = document.getElementById('newCbu').value;
+      const alias = document.getElementById('newAlias').value;
+      const bank = document.getElementById('newBank').value;
+
+      const ul = document.getElementById('contactList');
+      const li = document.createElement('li');
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <div>
+          <strong class="contact-name">${name}</strong>
+          <small class="text-muted d-block">CBU: ${cbu} | Alias: ${alias} | Banco: ${bank}</small>
+        </div>
+        <button class="btn btn-sm btn-primary btn-enviar" data-name="${name}">Enviar</button>
+      `;
+      ul.appendChild(li);
+
+      // Cerrar modal de Bootstrap de manera nativa
+      const modalEl = document.getElementById('modalContacto');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      modal.hide();
+      this.reset();
+    });
+
+    // Evento botón Buscar simple obligatorio
+    document.getElementById('btnBuscar').addEventListener('click', function() {
+      alert('Buscando coincidencias en tu agenda...');
+    });
+  </script>
+</body>
+</html>
